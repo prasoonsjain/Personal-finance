@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Retirement Planner</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:rgba(0,0,0,0.1)}
+html,body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;background:#f2f2f7;color:#1c1c1e}
+.tab-radio{display:none}
+
+.app{max-width:430px;margin:0 auto;background:#f2f2f7;min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:#fff;border-bottom:0.5px solid #d1d1d6;padding:12px 16px 8px;position:sticky;top:0;z-index:100}
+.topbar h1{font-size:18px;font-weight:600}
+.topbar p{font-size:11px;color:#8e8e93;margin-top:1px}
+
+.topnav{background:#fff;border-bottom:0.5px solid #d1d1d6;display:flex;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:8px 10px;gap:6px;position:sticky;top:57px;z-index:99}
+.topnav::-webkit-scrollbar{display:none}
+.navlabel{flex-shrink:0;padding:7px 16px;border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;background:#f2f2f7;color:#3c3c43;user-select:none;-webkit-user-select:none;display:inline-block}
+
+#t-you:checked   ~ .app .navlabel[for="t-you"],
+#t-ret:checked   ~ .app .navlabel[for="t-ret"],
+#t-kids:checked  ~ .app .navlabel[for="t-kids"],
+#t-prop:checked  ~ .app .navlabel[for="t-prop"],
+#t-res:checked   ~ .app .navlabel[for="t-res"]{background:#1D9E75;color:#fff}
+
+.screens{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 12px 30px}
+.screen{display:none}
+#t-you:checked  ~ .app .screens #s-you,
+#t-ret:checked  ~ .app .screens #s-ret,
+#t-kids:checked ~ .app .screens #s-kids,
+#t-prop:checked ~ .app .screens #s-prop,
+#t-res:checked  ~ .app .screens #s-res{display:block}
+
+.card{background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 0 0 0.5px rgba(0,0,0,0.08)}
+.card-title{font-size:11px;font-weight:600;color:#8e8e93;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.badge{width:18px;height:18px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0}
+.bp{background:#eeedfe;color:#3c3489}.bt{background:#e1f5ee;color:#0f6e56}
+.bc{background:#faece7;color:#993c1d}.bb{background:#e6f1fb;color:#185fa5}
+.ba{background:#faeeda;color:#854f0b}.bk{background:#fbeaf0;color:#993556}
+.bg{background:#eaf3de;color:#3b6d11}
+
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.row.full{grid-template-columns:1fr}
+.field{display:flex;flex-direction:column;gap:3px}
+.field label{font-size:11px;color:#8e8e93;font-weight:500}
+.field input,.field select{padding:9px 10px;border:0.5px solid #d1d1d6;border-radius:8px;background:#f2f2f7;color:#1c1c1e;font-size:15px;width:100%;font-family:inherit;-webkit-appearance:none;appearance:none}
+.field input:focus,.field select:focus{outline:none;border-color:#1D9E75;background:#fff}
+.hint{font-size:11px;color:#aeaeb2;margin-top:2px}
+.divider{border:none;border-top:0.5px solid #f2f2f7;margin:10px 0}
+
+.derived-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.derived-box{background:#f2f2f7;border-radius:8px;padding:10px}
+.derived-box .dl{font-size:11px;color:#8e8e93}
+.derived-box .dv{font-size:15px;font-weight:600;color:#1c1c1e;margin-top:2px}
+.warn-pill{font-size:11px;color:#854f0b;background:#faeeda;border-radius:20px;padding:3px 10px;display:none;margin-bottom:8px}
+
+/* CSS-only segments */
+.seg-radio{display:none}
+.seg{display:flex;background:#f2f2f7;border-radius:9px;padding:2px;gap:2px;border:0.5px solid #d1d1d6;margin-bottom:12px}
+.seglabel{flex:1;padding:7px 6px;border-radius:7px;font-size:13px;cursor:pointer;text-align:center;color:#8e8e93;font-weight:500;user-select:none;-webkit-user-select:none}
+.seg-radio:checked + .seglabel{background:#fff;color:#1c1c1e;box-shadow:0 0 0 0.5px rgba(0,0,0,0.1)}
+
+#prop-buy:checked ~ .buy-content{display:block}
+.buy-content{display:none}
+#ru-yes:checked ~ .ru-content{display:block}
+.ru-content{display:none}
+
+.info{font-size:11px;color:#3c3489;background:#eeedfe;border-radius:8px;padding:7px 10px;margin-top:6px}
+
+/* Kids — use <a> tag trick for iOS compatibility */
+.kid-card{background:#f9f9f9;border:0.5px solid #d1d1d6;border-radius:10px;padding:10px;margin-bottom:8px}
+.kid-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.kid-name-lbl{font-size:13px;font-weight:600}
+
+/* iOS-safe button styles — use <a> styled as button */
+.ios-btn{display:inline-block;padding:5px 12px;border:0.5px solid #f09595;border-radius:20px;font-size:11px;cursor:pointer;background:#fcebeb;color:#a32d2d;font-family:inherit;text-decoration:none;-webkit-appearance:none}
+.add-ios-btn{display:block;width:100%;padding:11px;border:1.5px dashed #d1d1d6;border-radius:10px;font-size:13px;cursor:pointer;background:transparent;color:#8e8e93;margin-top:4px;font-family:inherit;text-align:center;text-decoration:none;-webkit-appearance:none}
+
+/* Calculate button */
+.calc-btn{display:block;width:100%;padding:14px;background:#1D9E75;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:14px;-webkit-appearance:none;appearance:none;text-align:center}
+
+.sbar{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:12px;margin-bottom:10px}
+.sbar.good{background:#e1f5ee;border:0.5px solid #9fe1cb}
+.sbar.warn{background:#faeeda;border:0.5px solid #fac775}
+.sbar.bad{background:#fcebeb;border:0.5px solid #f7c1c1}
+.sbar-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.sbar.good .sbar-dot{background:#0f6e56}.sbar.warn .sbar-dot{background:#854f0b}.sbar.bad .sbar-dot{background:#a32d2d}
+.sbar-msg{font-size:13px;font-weight:500;line-height:1.4}
+.sbar.good .sbar-msg{color:#0f6e56}.sbar.warn .sbar-msg{color:#854f0b}.sbar.bad .sbar-msg{color:#a32d2d}
+
+.metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.metric{background:#fff;border-radius:10px;padding:10px 12px;box-shadow:0 0 0 0.5px rgba(0,0,0,0.08)}
+.metric.hi{background:#f2f2f7}
+.ml{font-size:10px;color:#8e8e93;margin-bottom:3px}
+.mv{font-size:16px;font-weight:600;color:#1c1c1e}
+.mv.good{color:#0f6e56}.mv.bad{color:#a32d2d}
+.ms{font-size:10px;color:#aeaeb2;margin-top:1px}
+
+.bk-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid #f2f2f7;font-size:12px;color:#3c3c43}
+.bk-row:last-child{border-bottom:none;font-weight:600;font-size:13px;color:#1c1c1e;padding-top:10px}
+.bk-pos{color:#0f6e56}
+.ms-pill{font-size:11px;background:#f2f2f7;border-radius:20px;padding:4px 10px;color:#3c3c43;display:inline-block;margin:0 4px 4px 0}
+.ms-pill b{color:#1c1c1e}
+
+.chart-seg{display:flex;gap:6px;margin-bottom:10px}
+.chart-radio{display:none}
+.chart-label{padding:5px 13px;border:0.5px solid #d1d1d6;border-radius:20px;font-size:11px;cursor:pointer;background:#f2f2f7;color:#8e8e93;user-select:none;-webkit-user-select:none}
+.chart-radio:checked + .chart-label{background:#e1f5ee;color:#0f6e56;border-color:#9fe1cb;font-weight:600}
+.chart-wrap{width:100%;height:220px;position:relative}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px;font-size:11px;color:#3c3c43}
+.legend span{display:flex;align-items:center;gap:4px}
+.legend i{width:8px;height:8px;border-radius:2px;display:inline-block;flex-shrink:0}
+
+#results-output{display:none}
+</style>
+</head>
+<body>
+
+<input class="tab-radio" type="radio" name="tab" id="t-you" checked>
+<input class="tab-radio" type="radio" name="tab" id="t-ret">
+<input class="tab-radio" type="radio" name="tab" id="t-kids">
+<input class="tab-radio" type="radio" name="tab" id="t-prop">
+<input class="tab-radio" type="radio" name="tab" id="t-res">
+
+<div class="app">
+  <div class="topbar">
+    <h1>Retirement Planner</h1>
+    <p>All amounts in AED — enter in today's money</p>
+  </div>
+
+  <div class="topnav">
+    <label class="navlabel" for="t-you">You</label>
+    <label class="navlabel" for="t-ret">Returns</label>
+    <label class="navlabel" for="t-kids">Kids</label>
+    <label class="navlabel" for="t-prop">Property</label>
+    <label class="navlabel" for="t-res">Results</label>
+  </div>
+
+  <div class="screens">
+
+    <!-- YOU -->
+    <div class="screen" id="s-you">
+      <div class="card">
+        <div class="card-title"><span class="badge bp">P</span>Personal</div>
+        <div class="row">
+          <div class="field"><label>Current age</label><input type="number" id="curAge" value="35" inputmode="numeric"></div>
+          <div class="field"><label>Retirement age</label><input type="number" id="retAge" value="60" inputmode="numeric"></div>
+        </div>
+        <div class="row full">
+          <div class="field"><label>Life expectancy</label><input type="number" id="lifeAge" value="85" inputmode="numeric"><div class="hint">how long corpus must last</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="badge bt">I</span>Income</div>
+        <div class="row full">
+          <div class="field"><label>Monthly salary (AED)</label><input type="number" id="salary" value="20000" inputmode="numeric"></div>
+        </div>
+        <div class="row full">
+          <div class="field"><label>Annual salary growth (%)</label><input type="number" id="salaryGrowth" value="5" step="0.5" inputmode="decimal"><div class="hint">salary compounds annually</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="badge bc">E</span>Expenses</div>
+        <div class="row">
+          <div class="field"><label>Current rent (AED/mo)</label><input type="number" id="rent" value="5000" inputmode="numeric"></div>
+          <div class="field"><label>Other expenses (AED/mo)</label><input type="number" id="otherExp" value="5000" inputmode="numeric"></div>
+        </div>
+        <div class="derived-grid">
+          <div class="derived-box"><div class="dl">Total expenses/mo</div><div class="dv" id="totalExp">—</div></div>
+          <div class="derived-box"><div class="dl">Monthly savings</div><div class="dv" id="derivedSav">—</div></div>
+        </div>
+        <div class="warn-pill" id="savWarn">⚠ Expenses exceed salary</div>
+        <div id="postRetRentWrap">
+          <div class="divider"></div>
+          <div class="row full">
+            <div class="field"><label>Post-retirement rent (today's money)</label><input type="number" id="postRetRent" value="6000" inputmode="numeric"><div class="hint" id="postRetRentHint">inflated to retirement: —</div></div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="card-title" style="margin-bottom:8px"><span class="badge ba">R</span>Rent upgrade</div>
+        <input class="seg-radio" type="radio" name="ru" id="ru-no" checked>
+        <label class="seglabel" for="ru-no">No</label>
+        <input class="seg-radio" type="radio" name="ru" id="ru-yes">
+        <label class="seglabel" for="ru-yes">Yes</label>
+        <div class="ru-content" style="margin-top:8px">
+          <div class="row">
+            <div class="field"><label>Upgrade at your age</label><input type="number" id="rentUpgradeAge" value="42" inputmode="numeric"></div>
+            <div class="field"><label>New rent (AED/mo)</label><input type="number" id="rentUpgradeAmt" value="14000" inputmode="numeric"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RETURNS -->
+    <div class="screen" id="s-ret">
+      <div class="card">
+        <div class="card-title"><span class="badge bt">S</span>Savings &amp; returns</div>
+        <div class="row full">
+          <div class="field"><label>Current savings / investments (AED)</label><input type="number" id="curSavings" value="200000" inputmode="numeric"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Pre-retirement return (%)</label><input type="number" id="preRet" value="10" step="0.5" inputmode="decimal"></div>
+          <div class="field"><label>Post-retirement return (%)</label><input type="number" id="postRet" value="6" step="0.5" inputmode="decimal"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Inflation rate (%)</label><input type="number" id="inflation" value="4" step="0.5" inputmode="decimal"></div>
+          <div class="field"><label>Education inflation (%)</label><input type="number" id="eduInflation" value="6" step="0.5" inputmode="decimal"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KIDS -->
+    <div class="screen" id="s-kids">
+      <div class="card">
+        <div class="card-title"><span class="badge bk">C</span>Children</div>
+        <div id="kidsWrap"></div>
+        <div id="noKids" style="font-size:12px;color:#aeaeb2;padding:4px 0 8px">No children added yet.</div>
+        <!-- Use <a href="#"> for iOS compatibility -->
+        <a href="#" class="add-ios-btn" id="addKidBtn">+ Add child</a>
+        <div class="divider"></div>
+        <div class="row full">
+          <div class="field"><label>Your age when giving life handout</label>
+            <input type="number" id="handoutAge" value="55" inputmode="numeric">
+            <div class="hint" id="handoutHint">amounts per child in today's money — inflated at giving age</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROPERTY -->
+    <div class="screen" id="s-prop">
+      <div class="card">
+        <div class="card-title"><span class="badge bb">H</span>Property</div>
+        <input class="seg-radio" type="radio" name="prop" id="prop-rent" checked>
+        <label class="seglabel" for="prop-rent">Renting</label>
+        <input class="seg-radio" type="radio" name="prop" id="prop-buy">
+        <label class="seglabel" for="prop-buy">Buying</label>
+        <div class="buy-content" style="margin-top:8px">
+          <div class="row full">
+            <div class="field"><label>House price (AED)</label><input type="number" id="housePrice" value="2000000" inputmode="numeric"></div>
+          </div>
+          <div class="row">
+            <div class="field"><label>Down payment (%)</label><input type="number" id="downPaymentPct" value="20" step="1" inputmode="decimal"><div class="hint" id="downPaymentHint">AED —</div></div>
+            <div class="field"><label>Other charges (%)</label><input type="number" id="otherChargesPct" value="4" step="0.5" inputmode="decimal"><div class="hint" id="otherChargesHint">AED —</div></div>
+          </div>
+          <div class="row">
+            <div class="field"><label>Buy at your age</label><input type="number" id="buyAge" value="40" inputmode="numeric"></div>
+            <div class="field"><label>Mortgage rate (%)</label><input type="number" id="mortgageRate" value="4" step="0.25" inputmode="decimal"></div>
+          </div>
+          <div class="row">
+            <div class="field"><label>Mortgage term (yrs)</label><input type="number" id="mortgageTerm" value="25" inputmode="numeric"></div>
+            <div class="field"><label>Appreciation (% p.a.)</label><input type="number" id="propAppreciation" value="3" step="0.5" inputmode="decimal"></div>
+          </div>
+          <div class="row full">
+            <div class="field"><label>At mortgage end</label>
+              <select id="propEnd">
+                <option value="sell">Sell &amp; revert to renting</option>
+                <option value="keep">Keep (no rent, no EMI)</option>
+              </select>
+            </div>
+          </div>
+          <div class="derived-grid">
+            <div class="derived-box"><div class="dl">Monthly EMI</div><div class="dv" id="mortgageEMI">—</div></div>
+            <div class="derived-box"><div class="dl">Paid off at age</div><div class="dv" id="mortgagePaidAge">—</div></div>
+          </div>
+          <div class="info" id="buyInfo"></div>
+          <div class="divider"></div>
+        </div>
+        <div class="card-title" style="margin-bottom:8px"><span class="badge bg">D</span>Other debts &amp; EMIs</div>
+        <div class="row full">
+          <div class="field"><label>Total outstanding debt (AED)</label><input type="number" id="debt" value="50000" inputmode="numeric"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Monthly EMI (AED)</label><input type="number" id="emi" value="1000" inputmode="numeric"></div>
+          <div class="field"><label>EMI ends in (months)</label><input type="number" id="emiMonths" value="48" inputmode="numeric"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTS -->
+    <div class="screen" id="s-res">
+      <button class="calc-btn" id="calcBtn">Calculate</button>
+      <div id="results-output">
+        <div class="sbar good" id="statusBar">
+          <div class="sbar-dot"></div>
+          <div class="sbar-msg" id="statusMsg"></div>
+        </div>
+        <div class="metric-grid">
+          <div class="metric hi"><div class="ml">Corpus needed</div><div class="mv" id="cCorpus">—</div><div class="ms">AED mn</div></div>
+          <div class="metric hi"><div class="ml">Surplus / shortfall</div><div class="mv" id="cGap">—</div><div class="ms">vs needed</div></div>
+          <div class="metric"><div class="ml" id="lProjected">Projected corpus</div><div class="mv" id="cProjected">—</div><div class="ms" id="sProjected">—</div></div>
+          <div class="metric"><div class="ml" id="lProp">Property</div><div class="mv" id="cProp">—</div><div class="ms" id="sProp">—</div></div>
+          <div class="metric"><div class="ml">Kids handout</div><div class="mv" id="cHandout">—</div><div class="ms">AED mn deducted</div></div>
+          <div class="metric"><div class="ml" id="lNet">Total</div><div class="mv" id="cNet">—</div><div class="ms" id="sNet">—</div></div>
+          <div class="metric"><div class="ml">Years to retire</div><div class="mv" id="cYears">—</div><div class="ms">remaining</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="badge bp">B</span>Breakdown</div>
+          <div id="breakdownTable"></div>
+        </div>
+        <div class="card">
+          <div class="card-title"><span class="badge ba">M</span>Milestones</div>
+          <div id="msList" style="line-height:2.2"></div>
+        </div>
+        <div class="card">
+          <div style="display:flex;gap:6px;margin-bottom:10px">
+            <input class="chart-radio" type="radio" name="chart" id="cg" checked>
+            <label class="chart-label" for="cg">Net worth</label>
+            <input class="chart-radio" type="radio" name="chart" id="cc">
+            <label class="chart-label" for="cc">Corpus vs target</label>
+          </div>
+          <div class="legend" id="legendBox"></div>
+          <div class="chart-wrap"><canvas id="chart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+var chartInst = null;
+var kidSeq = 0;
+var kidIds = [];
+
+function el(id){ return document.getElementById(id); }
+function val(id){ var e=el(id); return e ? (parseFloat(e.value)||0) : 0; }
+function fmtN(n){ return 'AED '+Math.round(n).toLocaleString(); }
+function mn(n){ return (n/1e6).toFixed(2); }
+function getDP(){ return val('housePrice')*val('downPaymentPct')/100; }
+function getOC(){ return val('housePrice')*val('otherChargesPct')/100; }
+function isPropBuy(){ var e=el('prop-buy'); return e&&e.checked; }
+function isRentUpgrade(){ var e=el('ru-yes'); return e&&e.checked; }
+function calcMEMI(){
+  if(!isPropBuy()) return 0;
+  var P=val('housePrice')-getDP(), r=val('mortgageRate')/100/12, n=val('mortgageTerm')*12;
+  if(P<=0||n<=0) return 0;
+  if(r<0.000001) return P/n;
+  return P*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
+}
+function getKids(){
+  return kidIds.map(function(id){
+    return{ name:(el('kname-'+id)&&el('kname-'+id).value)||'Child', age:val('kage-'+id), fee:val('kfee-'+id), uni:val('kuni-'+id), hand:val('khand-'+id) };
+  });
+}
+
+// ── Add child via <a href="#"> — iOS fires click on anchors reliably ──
+el('addKidBtn').onclick = function(e){
+  e.preventDefault();
+  addKid();
+  return false;
+};
+
+function addKid(){
+  if(kidIds.length>=4) return;
+  var id=kidSeq++; kidIds.push(id);
+  var num=kidIds.length;
+  var card=document.createElement('div');
+  card.className='kid-card'; card.id='kid-'+id;
+  card.innerHTML=
+    '<div class="kid-hd"><span class="kid-name-lbl" id="klbl-'+id+'">Child '+num+'</span>'+
+    '<a href="#" class="ios-btn" id="rm-'+id+'">Remove</a></div>'+
+    '<div class="row"><div class="field"><label>Name</label><input type="text" id="kname-'+id+'" value="Child '+num+'"></div>'+
+    '<div class="field"><label>Age now</label><input type="number" id="kage-'+id+'" value="'+(num*3)+'" min="0" max="17" inputmode="numeric"></div></div>'+
+    '<div class="row"><div class="field"><label>School fee/mo (AED)</label><input type="number" id="kfee-'+id+'" value="2000" inputmode="numeric"></div>'+
+    '<div class="field"><label>Univ. cost (AED)</label><input type="number" id="kuni-'+id+'" value="200000" inputmode="numeric"></div></div>'+
+    '<div class="row full"><div class="field"><label>Life handout (today\'s money)</label>'+
+    '<input type="number" id="khand-'+id+'" value="50000" inputmode="numeric"></div></div>';
+  el('kidsWrap').appendChild(card);
+  el('noKids').style.display='none';
+  // wire remove anchor
+  (function(kid, c){
+    el('rm-'+kid).onclick = function(e){ e.preventDefault(); removeKid(kid,c); return false; };
+  })(id, card);
+  // wire name
+  (function(kid){
+    el('kname-'+kid).oninput = function(){ el('klbl-'+kid).textContent = this.value||'Child'; sync(); };
+  })(id);
+  // wire inputs
+  var inputs = card.querySelectorAll('input');
+  for(var i=0;i<inputs.length;i++) inputs[i].oninput = sync;
+  sync();
+}
+
+function removeKid(id,card){
+  kidIds=kidIds.filter(function(k){ return k!==id; });
+  card.remove();
+  if(!kidIds.length) el('noKids').style.display='';
+  sync();
+}
+
+// ── Sync derived display ──
+function sync(){
+  var kids=getKids(), infl=val('inflation')/100;
+  var rent=val('rent'), otherExp=val('otherExp'), salary=val('salary');
+  var yrs=Math.max(0,val('retAge')-val('curAge'));
+  var emi=val('emi'), propBuy=isPropBuy(), mEMI=calcMEMI();
+  var activeSchool=kids.reduce(function(s,k){ return s+(k.age<18?k.fee:0); },0);
+  var totalExp=rent+otherExp+activeSchool;
+  var savings=salary-totalExp-emi-(propBuy?mEMI:0);
+  el('totalExp').textContent=fmtN(totalExp);
+  el('derivedSav').textContent=fmtN(Math.max(0,savings));
+  el('savWarn').style.display=savings<0?'block':'none';
+
+  var propEnd=el('propEnd')?el('propEnd').value:'rent';
+  var rentInRet=!propBuy||(propBuy&&propEnd==='sell');
+  el('postRetRentWrap').style.display=rentInRet?'':'none';
+  el('postRetRentHint').textContent='at retirement: '+fmtN(val('postRetRent')*Math.pow(1+infl,yrs))+'/mo';
+
+  if(propBuy){
+    var dp=getDP(),oc=getOC(),buyAge=val('buyAge'),maxT=Math.max(0,65-buyAge);
+    var ti=el('mortgageTerm');
+    if(val('mortgageTerm')>maxT) ti.value=maxT; ti.max=maxT;
+    el('downPaymentHint').textContent=fmtN(dp);
+    el('otherChargesHint').textContent=fmtN(oc);
+    el('mortgageEMI').textContent=fmtN(mEMI);
+    el('mortgagePaidAge').textContent='Age '+(buyAge+Math.min(val('mortgageTerm'),maxT));
+    el('buyInfo').textContent='Down pmt '+fmtN(dp)+' + charges '+fmtN(oc)+' at age '+buyAge+'. Capped at age 65 (max '+maxT+' yrs).';
+  }
+
+  if(kids.length>0){
+    var hA=val('handoutAge'), yH=Math.max(0,hA-val('curAge'));
+    var todT=kids.reduce(function(s,k){ return s+k.hand; },0);
+    var infT=kids.reduce(function(s,k){ return s+k.hand*Math.pow(1+infl,yH); },0);
+    el('handoutHint').textContent='Today: '+fmtN(todT)+' → age '+hA+': '+fmtN(infT);
+  }
+}
+
+// Wire all static inputs
+(function(){
+  var all=document.querySelectorAll('input,select');
+  for(var i=0;i<all.length;i++) all[i].oninput=sync;
+})();
+
+// ── Calculate button — most reliable iOS trigger ──
+el('calcBtn').onclick = function(){ calc(); return false; };
+
+function calc(){
+  el('results-output').style.display='block';
+  el('calcBtn').textContent='Recalculate';
+
+  var curAge=val('curAge'),retAge=val('retAge'),lifeAge=val('lifeAge');
+  var salary=val('salary'),salGrow=val('salaryGrowth')/100;
+  var rent=val('rent'),otherExp=val('otherExp');
+  var curSav=val('curSavings');
+  var preRet=val('preRet')/100,postRet=val('postRet')/100;
+  var infl=val('inflation')/100,eduInfl=val('eduInflation')/100;
+  var debt=val('debt'),emi=val('emi'),emiMo=val('emiMonths');
+  var handAge=val('handoutAge'),postRetRent=val('postRetRent');
+  var kids=getKids();
+  var propBuy=isPropBuy(), propEnd=el('propEnd').value;
+  var ru=isRentUpgrade(), ruAge=val('rentUpgradeAge'), ruAmt=val('rentUpgradeAmt');
+  var dp=getDP(),oc=getOC();
+  var buyAge=propBuy?val('buyAge'):9999;
+  var maxT=Math.max(0,65-buyAge);
+  var mortTermYrs=propBuy?Math.min(val('mortgageTerm'),maxT):0;
+  var mEMI=calcMEMI();
+  var housePrice=val('housePrice'),propApp=val('propAppreciation')/100;
+  var buyMonth=(buyAge-curAge)*12,mortTermMo=mortTermYrs*12,mortEndMonth=buyMonth+mortTermMo;
+  var yrs=Math.max(0,retAge-curAge),postYrs=Math.max(0,lifeAge-retAge);
+  var months=yrs*12,mr=preRet/12;
+  var rentInRet=!propBuy||(propBuy&&propEnd==='sell');
+  var postRetRentInfl=postRetRent*Math.pow(1+infl,yrs);
+  var retMonthly=(rentInRet?postRetRentInfl:0)+otherExp*Math.pow(1+infl,yrs);
+  var realRet=(1+postRet)/(1+infl)-1;
+  var corpusNeeded=Math.abs(realRet)<0.0001?retMonthly*12*postYrs:retMonthly*12*(1-Math.pow(1+realRet,-postYrs))/realRet;
+  corpusNeeded+=debt;
+
+  var corpus=curSav,propVal=0,propBought=false,totalHandoutPaid=0,propSaleProceeds=0;
+  var growthArr=[corpus],milestones=[];
+
+  for(var m=0;m<months;m++){
+    var yr=Math.floor(m/12),ageNow=curAge+yr;
+    var curSal=salary*Math.pow(1+salGrow,yr);
+    if(propBuy&&!propBought&&m>=Math.floor(buyMonth)){
+      corpus-=(dp+oc); propVal=housePrice; propBought=true;
+      milestones.push({age:ageNow,label:'House purchased',detail:fmtN(housePrice)});
+    }
+    var isOwning=propBought&&propVal>0;
+    var mRent=0;
+    if(!isOwning){
+      if(ru&&ageNow>=ruAge){ var msu=m-(ruAge-curAge)*12; mRent=ruAmt*Math.pow(1+infl/12,Math.max(0,msu)); }
+      else mRent=rent*Math.pow(1+infl/12,m);
+    }
+    var mOther=otherExp*Math.pow(1+infl/12,m);
+    var mSchool=kids.reduce(function(s,k){ return s+((k.age+yr+(m%12)/12)<18?k.fee:0); },0);
+    var mEt=0;
+    if(m<emiMo) mEt+=emi;
+    if(propBuy&&propBought&&m<mortEndMonth) mEt+=mEMI;
+    var mSav=Math.max(0,curSal-(mRent+mOther+mSchool)-mEt);
+    if(propBought&&propVal>0) propVal*=(1+propApp/12);
+    corpus=corpus*(1+mr)+mSav;
+    if((m+1)%12===0){
+      var yrEnd=Math.floor((m+1)/12),ageEnd=curAge+yrEnd;
+      if(propBuy&&propBought&&(m+1)===mortEndMonth) milestones.push({age:ageEnd,label:'Mortgage paid off'});
+      if((m+1)===emiMo) milestones.push({age:ageEnd,label:'Other debt cleared'});
+      if(ru&&ageEnd===ruAge) milestones.push({age:ageEnd,label:'Rent upgraded',detail:fmtN(ruAmt)+'/mo'});
+      kids.forEach(function(k){
+        if((k.age+yrEnd)===18){ var uc=k.uni*Math.pow(1+eduInfl,yrEnd); corpus-=uc; milestones.push({age:ageEnd,label:k.name+' university',detail:'AED '+mn(uc)+' mn'}); }
+      });
+      if(ageEnd===handAge&&kids.length>0&&totalHandoutPaid===0){
+        var yH=Math.max(0,handAge-curAge),tH=kids.reduce(function(s,k){ return s+k.hand*Math.pow(1+infl,yH); },0);
+        corpus-=tH; totalHandoutPaid=tH;
+        milestones.push({age:ageEnd,label:'Kids handout',detail:'AED '+mn(tH)+' mn'});
+      }
+      growthArr.push(Math.round(corpus));
+    }
+  }
+
+  if(propBuy&&propBought&&propEnd==='sell'){
+    propSaleProceeds=propVal; corpus+=propVal; propVal=0;
+    milestones.push({age:retAge,label:'House sold',detail:'AED '+mn(propSaleProceeds)+' mn added'});
+  }
+  var retPropVal=(propBuy&&propEnd==='keep')?propVal:0;
+  var netWorth=corpus+retPropVal;
+  var gap=corpus-corpusNeeded;
+
+  el('cCorpus').textContent='AED '+mn(corpusNeeded);
+  el('cYears').textContent=yrs+' yrs';
+  el('cHandout').textContent=totalHandoutPaid>0?'AED '+mn(totalHandoutPaid):(kids.length>0?'AED 0.00':'N/A');
+  var gEl=el('cGap'); gEl.textContent=(gap>=0?'+':'')+' AED '+mn(gap); gEl.className='mv '+(gap>=0?'good':'bad');
+
+  if(propBuy&&propEnd==='keep'){
+    el('cProjected').textContent='AED '+mn(netWorth); el('lProjected').textContent='Total net worth'; el('sProjected').textContent='corpus + property';
+    el('cProp').textContent='AED '+mn(retPropVal); el('lProp').textContent='Property value'; el('sProp').textContent='locked — you live in it';
+    el('cNet').textContent='AED '+mn(corpus); el('lNet').textContent='Liquid corpus'; el('sNet').textContent='investments only';
+  } else if(propBuy&&propEnd==='sell'){
+    el('cProjected').textContent='AED '+mn(corpus-propSaleProceeds); el('lProjected').textContent='Investment corpus'; el('sProjected').textContent='savings & returns';
+    el('cProp').textContent='AED '+mn(propSaleProceeds); el('lProp').textContent='Sale proceeds'; el('sProp').textContent='added at retirement';
+    el('cNet').textContent='AED '+mn(corpus); el('lNet').textContent='Total corpus'; el('sNet').textContent='investments + proceeds';
+  } else {
+    el('cProjected').textContent='AED '+mn(corpus); el('lProjected').textContent='Projected corpus'; el('sProjected').textContent='savings & returns';
+    el('cProp').textContent='N/A'; el('lProp').textContent='Property'; el('sProp').textContent='not applicable';
+    el('cNet').textContent='AED '+mn(corpus); el('lNet').textContent='Total corpus'; el('sNet').textContent='AED mn';
+  }
+
+  var cls=gap>=0?'good':gap>-corpusNeeded*0.25?'warn':'bad';
+  el('statusBar').className='sbar '+cls;
+  el('statusMsg').textContent=gap>=0
+    ?'On track — corpus exceeds target by AED '+mn(gap)+' mn.'
+    :'Shortfall of AED '+mn(Math.abs(gap))+' mn. Adjust inputs to close the gap.';
+
+  var bkRows=[];
+  if(propBuy&&propEnd==='keep'){
+    bkRows=[{l:'Financial corpus',v:corpus,c:''},{l:'Property value (locked)',v:retPropVal,c:'bk-pos'},{l:'Total net worth',v:netWorth,c:''}];
+  } else if(propBuy&&propEnd==='sell'){
+    bkRows=[{l:'Investment corpus',v:corpus-propSaleProceeds,c:''},{l:'Property sale proceeds',v:propSaleProceeds,c:'bk-pos'},{l:'Total corpus',v:corpus,c:''}];
+  } else {
+    bkRows=[{l:'Projected corpus',v:corpus,c:''},{l:'Total corpus',v:corpus,c:''}];
+  }
+  el('breakdownTable').innerHTML=bkRows.map(function(r){
+    return '<div class="bk-row"><span>'+r.l+'</span><span class="'+(r.c||'')+'">AED '+mn(r.v)+' mn</span></div>';
+  }).join('');
+
+  var seen={};
+  el('msList').innerHTML=milestones.filter(function(m){ var k=m.age+'|'+m.label; if(seen[k])return false; seen[k]=true; return true; })
+    .map(function(m){ return '<span class="ms-pill"><b>Age '+m.age+'</b> '+m.label+(m.detail?' — '+m.detail:'')+'</span>'; }).join('')
+    ||'<span style="font-size:12px;color:#aeaeb2">No major milestones.</span>';
+
+  var labels=Array.from({length:yrs+1},function(_,i){ return curAge+i; });
+  var cgEl=el('cg'); var showGrowth=!cgEl||cgEl.checked;
+  var corpusData=growthArr.map(function(d){ return +(d/1e6).toFixed(3); });
+  var targetData=labels.map(function(){ return +(corpusNeeded/1e6).toFixed(3); });
+  var items=[{color:'#1D9E75',label:'Corpus'},{color:'#D85A30',label:'Target',dashed:true}];
+  var ds=[
+    {data:corpusData,borderColor:'#1D9E75',backgroundColor:'rgba(29,158,117,0.08)',borderWidth:2,pointRadius:0,fill:true,tension:0.35},
+    {data:targetData,borderColor:'#D85A30',borderWidth:1.5,borderDash:[5,4],pointRadius:0,fill:false}
+  ];
+  if(showGrowth&&retPropVal>0){
+    var bIdx=buyAge-curAge;
+    items.push({color:'#534AB7',label:'Property'});
+    ds.push({data:labels.map(function(_,i){ return i<bIdx?null:+((housePrice*Math.pow(1+propApp,i-bIdx))/1e6).toFixed(3); }),borderColor:'#534AB7',backgroundColor:'rgba(83,74,183,0.06)',borderWidth:2,pointRadius:0,fill:true,tension:0.35,spanGaps:false});
+  }
+  el('legendBox').innerHTML=items.map(function(it){
+    return '<span><i style="background:'+it.color+';'+(it.dashed?'height:2px;width:12px;border-radius:0':'')+'">&nbsp;</i>'+it.label+'</span>';
+  }).join('');
+  if(chartInst) chartInst.destroy();
+  chartInst=new Chart(el('chart'),{type:'line',data:{labels:labels,datasets:ds},options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){ return ctx.raw.toFixed(2)+' mn'; }}}},
+    scales:{
+      x:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:9},color:'#8e8e93',autoSkip:true,maxTicksLimit:8}},
+      y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{size:9},color:'#8e8e93',callback:function(v){ return v.toFixed(1)+' mn'; }}}
+    }
+  }});
+}
+
+sync();
+</script>
+</body>
+</html>
